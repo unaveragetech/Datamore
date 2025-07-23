@@ -1,0 +1,44 @@
+name: Respond to Ollama Query
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  respond:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          echo "Ollama installed."
+
+      - name: Start Ollama Server
+        run: |
+          nohup ollama serve > ollama.log 2>&1 &
+          sleep 10  # Wait for server to boot
+
+      - name: Pull LLaMA3 model
+        run: |
+          ollama pull llama3
+
+      - name: Run Python Dataset Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running dataset generation for issue #${{ github.event.issue.number }}"
+          python ollama_interactor.py ${{ github.event.issue.number }}
