@@ -83,7 +83,7 @@ def comment_issue(issue_number, text):
     cfg = load_config()
     url = f"https://api.github.com/repos/{cfg['repo_owner']}/{cfg['repo_name']}/issues/{issue_number}/comments"
     resp = requests.post(url, headers={
-        "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
+        "Authorization": f"token {os.getenv('GH_PAT')}",
         "Accept": "application/vnd.github.v3+json"
     }, json={"body": text})
     resp.raise_for_status()
