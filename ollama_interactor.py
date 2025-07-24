@@ -58,7 +58,7 @@ def get_issue_data(issue_number):
     cfg = load_config()
     url = f"https://api.github.com/repos/{cfg['repo_owner']}/{cfg['repo_name']}/issues/{issue_number}"
     resp = requests.get(url, headers={
-        "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
+        "Authorization": f"token {os.getenv('GH_pat')}",
         "Accept": "application/vnd.github.v3+json"
     })
     resp.raise_for_status()
