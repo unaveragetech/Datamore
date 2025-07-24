@@ -38,7 +38,8 @@ jobs:
 
       - name: Run Python Dataset Script
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+
         run: |
           echo "Running dataset generation for issue #${{ github.event.issue.number }}"
           python ollama_interactor.py ${{ github.event.issue.number }}
