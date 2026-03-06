@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datamore &#8211; AI Dataset Generator</title>
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+      --green: #3fb950; --purple: #bc8cff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border);
+              padding: 1.5rem 2rem; }
+    header h1 { font-size: 1.8rem; color: var(--accent); }
+    header p { color: var(--muted); margin-top: .25rem; }
+    .badge { background: rgba(188,140,255,.15); color: var(--purple);
+              border: 1px solid rgba(188,140,255,.3); padding: 2px 8px;
+              border-radius: 12px; font-size: .75rem; margin-left: .5rem; }
+    .hero-stats { background: var(--surface); border-bottom: 1px solid var(--border);
+                   padding: 1rem 2rem; display: flex; gap: 2rem; flex-wrap: wrap; }
+    .stat .value { font-size: 2rem; font-weight: 700; color: var(--green); }
+    .stat .label { color: var(--muted); font-size: .85rem; }
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    h2 { font-size: 1.3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border);
+          padding-bottom: .5rem; }
+    .how-to { background: var(--surface); border: 1px solid var(--border);
+                border-radius: 8px; padding: 1.5rem; margin-bottom: 2.5rem; }
+    .how-to ol { padding-left: 1.5rem; color: var(--muted); line-height: 1.9; }
+    .how-to ol strong { color: var(--text); }
+    pre { background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
+            padding: 1rem; margin-top: .75rem; color: var(--muted);
+            font-size: .85rem; overflow-x: auto; }
+    .recent-grid { display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 1rem; margin-bottom: 2.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+              border-radius: 8px; padding: 1.25rem;
+              transition: border-color .2s; }
+    .card:hover { border-color: var(--accent); }
+    .card h3 { font-size: 1rem; color: var(--accent); margin-bottom: .75rem; }
+    .card p { font-size: .875rem; color: var(--muted); margin-bottom: .4rem; }
+    .card p strong { color: var(--text); }
+    code { background: rgba(88,166,255,.1); color: var(--accent);
+             padding: 2px 6px; border-radius: 4px; font-size: .8rem; }
+    .download-btn { display: inline-block; margin-top: .75rem; margin-right: .5rem;
+                      background: var(--green); color: #000; padding: .4rem .9rem;
+                      border-radius: 6px; text-decoration: none; font-size: .85rem;
+                      font-weight: 600; transition: opacity .2s; }
+    .download-btn:hover { opacity: .8; }
+    .issue-link { display: inline-block; margin-top: .75rem; color: var(--accent);
+                   text-decoration: none; font-size: .85rem; padding: .4rem .9rem;
+                   border: 1px solid var(--accent); border-radius: 6px;
+                   transition: background .2s; }
+    .issue-link:hover { background: rgba(88,166,255,.1); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th { background: var(--surface); color: var(--muted); font-weight: 600;
+           text-align: left; padding: .65rem .75rem;
+           border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); }
+    tr:hover td { background: rgba(255,255,255,.03); }
+    td a { color: var(--accent); text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    td .download-btn { margin-top: 0; padding: .3rem .7rem; font-size: .8rem; }
+    .empty { color: var(--muted); padding: 1rem 0; }
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem;
+               text-align: center; color: var(--muted); font-size: .85rem; margin-top: 3rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>&#x1F916; Datamore <span class="badge">AI Datasets</span></h1>
+    <p>Generate AI training datasets from GitHub Issues using Ollama</p>
+  </header>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="value">0</div>
+      <div class="label">Datasets Generated</div>
+    </div>
+    <div class="stat">
+      <div class="value">0 KB</div>
+      <div class="label">Total Size</div>
+    </div>
+    <div class="stat">
+      <div class="value">0</div>
+      <div class="label">Models Used</div>
+    </div>
+  </div>
+
+  <main>
+    <div class="how-to">
+      <h2>&#x1F4CB; How to Generate a Dataset</h2>
+      <ol>
+        <li><strong>Create a new issue</strong> in this repository.</li>
+        <li><strong>Set the title</strong> to the Ollama model name
+            (e.g. <code>Llama 3</code>, <code>Mistral</code>).</li>
+        <li><strong>Set the body</strong> to your topic
+            (e.g. <code>History and dates</code>) or use the structured format:</li>
+      </ol>
+      <pre>Topic: World History
+Entries: 100
+Format: qa
+Description: Questions about major world history events</pre>
+      <p style="color:var(--muted);margin-top:.75rem;font-size:.875rem">
+        Supported formats: <code>qa</code> (question/answer),
+        <code>facts</code> (fact/explanation), <code>story</code> (prompt/story)
+      </p>
+    </div>
+
+    <h2>&#x2728; Recent Datasets</h2>
+    <div class="recent-grid">
+      <p class="empty">No datasets yet. <a href="../../issues/new">Create an issue</a> to generate one!</p>
+    </div>
+
+    <h2>&#x1F4E6; All Datasets</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Issue</th><th>Title</th><th>Topic</th><th>Model</th>
+            <th>Format</th><th>Entries</th><th>Size</th><th>Created</th><th>Download</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="9" style="text-align:center;color:#8b949e">No datasets yet.</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    <p>
+      Powered by <a href="https://ollama.com" target="_blank">Ollama</a> &amp;
+      <a href="https://github.com/unaveragetech/Datamore" target="_blank">Datamore</a>
+      &middot; Datasets are generated automatically from GitHub Issues
+    </p>
+  </footer>
+</body>
+</html>
