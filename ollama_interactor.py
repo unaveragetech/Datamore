@@ -4,28 +4,56 @@ import zipfile
 import requests
 import sys
 from datetime import datetime, timezone
+from html import escape as html_escape
 from pathlib import Path
 
 OLLAMA_API = "http://localhost:11434/api"
 
 # Normalise common model name variants to Ollama model tags
 MODEL_ALIASES = {
+    # Llama 3.x series (small, recommended)
+    "llama3.2": "llama3.2",
+    "llama 3.2": "llama3.2",
+    "llama3.2 (3b)": "llama3.2:3b",
+    "llama3.2 (1b)": "llama3.2:1b",
+    "llama3.1": "llama3.1",
+    "llama 3.1": "llama3.1",
+    "llama3.1 (8b)": "llama3.1:8b",
+    # llama3.5 does not exist in Ollama – map to the closest valid small model
+    "llama3.5": "llama3.2",
+    "llama 3.5": "llama3.2",
+    # Llama 3 (original)
     "llama 3": "llama3",
     "llama3": "llama3",
     "llama 3 (70b)": "llama3:70b",
     "llama 3 (8b)": "llama3:8b",
+    # Llama 2
     "llama 2": "llama2",
     "llama2": "llama2",
     "llama 2 (7b)": "llama2:7b",
     "llama 2 uncensored": "llama2-uncensored",
+    # Phi
+    "phi3.5": "phi3.5",
+    "phi 3.5": "phi3.5",
     "phi 3 mini": "phi3",
     "phi3": "phi3",
     "phi 3 medium": "phi3:medium",
     "phi 3 (7b)": "phi3:7b",
+    # Gemma
+    "gemma2": "gemma2",
+    "gemma 2": "gemma2",
+    "gemma2 (2b)": "gemma2:2b",
     "gemma (2b)": "gemma:2b",
     "gemma (7b)": "gemma:7b",
     "gemma": "gemma",
+    # Mistral / Mixtral
     "mistral": "mistral",
+    "mistral (7b)": "mistral:7b",
+    "mixtral": "mixtral",
+    # TinyLlama
+    "tinyllama": "tinyllama",
+    "tiny llama": "tinyllama",
+    # Other small models
     "moondream 2": "moondream",
     "neural chat": "neural-chat",
     "starling": "starling-lm",
@@ -35,9 +63,34 @@ MODEL_ALIASES = {
     "solar": "solar",
     "marco-o1": "marco-o1:7b-fp16",
     "macro-1o": "marco-o1:7b-fp16",
-    "ibm granite (2b)": "granite:2b",
+    "ibm granite (2b)": "granite3.2:2b",
+    "granite:2b": "granite3.2:2b",
+    "granite3.2": "granite3.2",
+    "granite 3.2": "granite3.2",
     "deepseek r1 (1.5b)": "deepseek-r1:1.5b",
     "deepseek-r1": "deepseek-r1",
+    "deepseek r1": "deepseek-r1",
+    "qwen2.5": "qwen2.5",
+    "qwen 2.5": "qwen2.5",
+    "qwen2.5 (0.5b)": "qwen2.5:0.5b",
+    "qwen2.5 (1.5b)": "qwen2.5:1.5b",
+    "smollm2": "smollm2",
+    "smol lm 2": "smollm2",
+}
+
+# Curated list of small models that are available in the Ollama library and
+# run comfortably on modest hardware (≤8 GB VRAM / 16 GB RAM).
+SMALL_MODELS = {
+    "llama3.2": "Meta Llama 3.2 (3B) – great general-purpose small model",
+    "llama3.2:1b": "Meta Llama 3.2 (1B) – ultra-lightweight",
+    "tinyllama": "TinyLlama (1.1B) – fastest, lowest memory",
+    "phi3": "Microsoft Phi-3 Mini (3.8B) – strong reasoning",
+    "phi3.5": "Microsoft Phi-3.5 Mini (3.8B) – improved Phi-3",
+    "gemma2:2b": "Google Gemma 2 (2B) – efficient and capable",
+    "mistral": "Mistral (7B) – well-rounded 7B model",
+    "qwen2.5:1.5b": "Qwen 2.5 (1.5B) – multilingual small model",
+    "deepseek-r1:1.5b": "DeepSeek R1 (1.5B) – reasoning-focused",
+    "smollm2": "SmolLM2 (135M–1.7B) – very small, fast",
 }
 
 DATASETS_DIR = Path("datasets")
@@ -158,7 +211,10 @@ def resolve_model(raw_name):
 
 
 def pull_model(model):
-    """Ask Ollama to pull the model (no-op if already present)."""
+    """Ask Ollama to pull the model (no-op if already present).
+
+    Returns True if the model is ready, False otherwise.
+    """
     print(f"📥 Pulling model {model} …")
     try:
         resp = requests.post(
@@ -168,8 +224,10 @@ def pull_model(model):
         )
         resp.raise_for_status()
         print(f"✅ Model {model} ready")
+        return True
     except Exception as exc:
         print(f"⚠️  Could not pull {model}: {exc}")
+        return False
 
 
 def build_prompt(topic, entries, fmt):
@@ -517,6 +575,11 @@ def generate_index_html(idx):
     rows = "".join(_row(d) for d in datasets) or (
         '<tr><td colspan="9" style="text-align:center;color:#8b949e">No datasets yet.</td></tr>'
     )
+    small_models_rows = "".join(
+        f"<tr><td><code>{html_escape(name)}</code></td>"
+        f"<td style=\"color:var(--muted)\">{html_escape(desc)}</td></tr>"
+        for name, desc in SMALL_MODELS.items()
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -627,6 +690,16 @@ def generate_index_html(idx):
 Entries: 100
 Format: qa
 Description: Questions about major world history events</pre>
+      <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F916; Recommended Small Models</h3>
+      <p style="color:var(--muted);font-size:.875rem;line-height:1.7">
+        Use one of these validated model names as the issue title. They run on modest hardware and are available in the Ollama library.
+      </p>
+      <table style="margin-bottom:.75rem;margin-top:.5rem">
+        <thead><tr><th>Model (issue title)</th><th>Description</th></tr></thead>
+        <tbody>
+          {small_models_rows}
+        </tbody>
+      </table>
       <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F4C4; Dataset Formats</h3>
       <table style="margin-bottom:.75rem">
         <thead><tr><th>Format</th><th>Fields</th><th>Best for</th></tr></thead>
@@ -714,7 +787,21 @@ def main():
     print(f"  Entries: {entries}")
     print(f"  Format : {fmt}")
 
-    pull_model(model)
+    pull_ok = pull_model(model)
+    if not pull_ok:
+        small_models_list = "\n".join(
+            f"- `{name}` – {desc}" for name, desc in SMALL_MODELS.items()
+        )
+        comment_issue(
+            issue_number,
+            f"❌ Could not pull model `{model}` from Ollama.\n\n"
+            f"The model name `{raw_model}` (resolved to `{model}`) is not available "
+            f"in the Ollama library, or Ollama could not reach its registry.\n\n"
+            f"**Recommended small models** (use one of these as the issue title):\n\n"
+            f"{small_models_list}\n\n"
+            f"Please create a new issue with a valid model name.",
+        )
+        sys.exit(1)
 
     prompt = build_prompt(topic, entries, fmt)
     print(f"📤 Sending prompt to {model} …")
