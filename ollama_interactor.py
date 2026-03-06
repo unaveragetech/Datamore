@@ -239,11 +239,123 @@ def extract_json(text):
 
 
 # ---------------------------------------------------------------------------
+# Quality assessment
+# ---------------------------------------------------------------------------
+
+MAX_QUALITY_SAMPLES = 5  # entries shown to the model for scoring
+
+
+def build_quality_prompt(fmt, samples):
+    """Build a prompt asking the model to score a list of dataset entries."""
+    samples_json = json.dumps(samples, indent=2)
+    field_hint = {
+        "qa": '"instruction" (question) and "output" (answer)',
+        "facts": '"fact" and "explanation"',
+        "story": '"prompt" and "story"',
+    }.get(fmt, "the fields present")
+    return (
+        f"You are a dataset quality evaluator. Below are {len(samples)} sample entries "
+        f"from a '{fmt}' dataset. Each entry has {field_hint}.\n\n"
+        f"Samples:\n{samples_json}\n\n"
+        "Rate each entry on the following criteria (score 1-10):\n"
+        "  - Accuracy: Is the content factually correct?\n"
+        "  - Clarity: Is the writing clear and well-structured?\n"
+        "  - Completeness: Does the entry fully address the topic?\n\n"
+        "Return ONLY a JSON array with one object per entry containing:\n"
+        '  {"index": <0-based index>, "accuracy": <1-10>, "clarity": <1-10>, '
+        '"completeness": <1-10>, "overall": <1-10>, "note": "<one sentence>"}\n'
+        "No extra text outside the JSON array."
+    )
+
+
+def assess_dataset_quality(model, fmt, data):
+    """
+    Ask the model to score up to MAX_QUALITY_SAMPLES entries.
+
+    Returns a dict with keys:
+      scores   – list of per-entry score dicts
+      average  – dict of average scores per criterion
+    """
+    if not data:
+        return {"scores": [], "average": {}}
+
+    samples = data[:MAX_QUALITY_SAMPLES]
+    prompt = build_quality_prompt(fmt, samples)
+    print(f"📊 Assessing dataset quality ({len(samples)} samples) …")
+    raw = call_ollama(model, prompt)
+    if not raw:
+        print("⚠️  Quality assessment skipped – no response from model")
+        return {"scores": [], "average": {}}
+
+    scores = extract_json(raw)
+    if not scores or not isinstance(scores, list):
+        print("⚠️  Quality assessment skipped – could not parse scores")
+        return {"scores": [], "average": {}}
+
+    # Compute averages across all returned scores
+    criteria = ["accuracy", "clarity", "completeness", "overall"]
+    totals = {c: 0 for c in criteria}
+    count = 0
+    for s in scores:
+        if isinstance(s, dict):
+            for c in criteria:
+                totals[c] += s.get(c, 0)
+            count += 1
+    average = {c: round(totals[c] / count, 1) for c in criteria} if count else {}
+    print(f"✅ Quality averages: {average}")
+    return {"scores": scores, "average": average}
+
+
+def _quality_chart_html(quality):
+    """Render a compact CSS bar chart for the quality averages."""
+    avg = quality.get("average", {})
+    if not avg:
+        return ""
+    criteria_labels = {
+        "accuracy": "Accuracy",
+        "clarity": "Clarity",
+        "completeness": "Completeness",
+        "overall": "Overall",
+    }
+    bars = ""
+    for key, label in criteria_labels.items():
+        score = avg.get(key, 0)
+        pct = score * 10  # score is 1-10, map to 0-100%
+        color = "#3fb950" if score >= 7 else "#d29922" if score >= 4 else "#f85149"
+        bars += (
+            f'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">'
+            f'<span style="width:100px;color:#8b949e;font-size:.8rem">{label}</span>'
+            f'<div style="flex:1;background:#21262d;border-radius:4px;height:14px">'
+            f'<div style="width:{pct}%;background:{color};height:14px;border-radius:4px"></div>'
+            f'</div>'
+            f'<span style="width:24px;text-align:right;font-size:.8rem;color:#e6edf3">{score}</span>'
+            f'</div>'
+        )
+    scores_list = quality.get("scores", [])
+    notes_html = ""
+    if scores_list:
+        notes = [
+            f'<li style="font-size:.8rem;color:#8b949e">Entry {s.get("index",i)}: {s.get("note","")}</li>'
+            for i, s in enumerate(scores_list) if isinstance(s, dict) and s.get("note")
+        ]
+        if notes:
+            notes_html = '<ul style="padding-left:1rem;margin-top:.5rem">' + "".join(notes) + "</ul>"
+    return (
+        f'<div style="margin-top:.75rem">'
+        f'<p style="color:#8b949e;font-size:.8rem;margin-bottom:.5rem">Quality Assessment '
+        f'(sampled {len(scores_list)} entr{"y" if len(scores_list)==1 else "ies"})</p>'
+        f'{bars}{notes_html}'
+        f'</div>'
+    )
+
+
+# ---------------------------------------------------------------------------
 # Dataset persistence
 # ---------------------------------------------------------------------------
 
-def save_dataset_zip(issue_number, model, topic, entries_requested, fmt, data, raw_response):
-    """Write a zip containing dataset.json, dataset.jsonl and README.md."""
+def save_dataset_zip(issue_number, model, topic, entries_requested, fmt, data, raw_response,
+                     quality=None):
+    """Write a zip containing dataset.json, dataset.jsonl, quality.json and README.md."""
     DATASETS_DIR.mkdir(exist_ok=True)
     safe_topic = "".join(
         c if c.isalnum() or c in "-_" else "_" for c in topic.lower()
@@ -262,10 +374,20 @@ def save_dataset_zip(issue_number, model, topic, entries_requested, fmt, data, r
             "entries_requested": entries_requested,
             "entries_generated": len(data) if data else 0,
             "generated_at": generated_at,
+            "quality": quality or {},
         },
         "data": data or [],
         "raw_response": raw_response or "",
     }
+
+    avg = (quality or {}).get("average", {})
+    quality_section = ""
+    if avg:
+        quality_section = (
+            "\n## Quality Assessment\n\n"
+            "| Criterion | Score (1–10) |\n|---|---|\n"
+            + "".join(f"| {k.capitalize()} | {v} |\n" for k, v in avg.items())
+        )
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("dataset.json", json.dumps(dataset_obj, indent=2))
@@ -274,6 +396,8 @@ def save_dataset_zip(issue_number, model, topic, entries_requested, fmt, data, r
                 "dataset.jsonl",
                 "\n".join(json.dumps(row) for row in data),
             )
+        if quality:
+            zf.writestr("quality.json", json.dumps(quality, indent=2))
         readme = (
             f"# Dataset: {topic}\n\n"
             f"Generated by [Datamore](https://github.com/unaveragetech/Datamore) "
@@ -284,6 +408,7 @@ def save_dataset_zip(issue_number, model, topic, entries_requested, fmt, data, r
             f"| Format | {fmt} |\n"
             f"| Entries | {len(data) if data else 0} |\n"
             f"| Generated at | {generated_at} |\n"
+            f"{quality_section}"
         )
         zf.writestr("README.md", readme)
 
@@ -304,7 +429,8 @@ def load_index():
     return {"datasets": []}
 
 
-def update_index(issue_number, model, topic, fmt, entries, zip_name, zip_path, issue_url, issue_title):
+def update_index(issue_number, model, topic, fmt, entries, zip_name, zip_path, issue_url,
+                 issue_title, quality=None):
     idx = load_index()
     # Remove any previous entry for this issue
     idx["datasets"] = [d for d in idx["datasets"] if d.get("issue_number") != issue_number]
@@ -319,6 +445,7 @@ def update_index(issue_number, model, topic, fmt, entries, zip_name, zip_path, i
         "zip_file": f"datasets/{zip_name}",
         "file_size": os.path.getsize(zip_path),
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "quality": quality or {},
     })
     DATASETS_DIR.mkdir(exist_ok=True)
     INDEX_FILE.write_text(json.dumps(idx, indent=2))
@@ -331,6 +458,7 @@ def update_index(issue_number, model, topic, fmt, entries, zip_name, zip_path, i
 # ---------------------------------------------------------------------------
 
 def _card(d):
+    quality_html = _quality_chart_html(d.get("quality", {}))
     return f"""
         <div class="card">
           <h3>{d.get('issue_title', d.get('topic', 'Dataset'))}</h3>
@@ -339,13 +467,28 @@ def _card(d):
           <p><strong>Format:</strong> {d.get('format', 'qa').upper()}</p>
           <p><strong>Entries:</strong> {d.get('entries', '?')}</p>
           <p><strong>Created:</strong> {str(d.get('created_at', ''))[:10]}</p>
+          {quality_html}
           <a href="{d.get('zip_file', '#')}" class="download-btn">&#x2B07; Download</a>
           <a href="{d.get('issue_url', '#')}" target="_blank" class="issue-link">View Issue</a>
         </div>"""
 
 
+def _quality_badge(quality):
+    avg = (quality or {}).get("average", {})
+    overall = avg.get("overall")
+    if overall is None:
+        return ""
+    color = "#3fb950" if overall >= 7 else "#d29922" if overall >= 4 else "#f85149"
+    return (
+        f'<span style="background:{color}20;color:{color};border:1px solid {color}50;'
+        f'padding:1px 6px;border-radius:10px;font-size:.75rem;margin-left:.25rem">'
+        f'★ {overall}</span>'
+    )
+
+
 def _row(d):
     size_kb = d.get("file_size", 0) // 1024
+    quality_badge = _quality_badge(d.get("quality"))
     return (
         f"<tr>"
         f"<td><a href=\"{d.get('issue_url','#')}\" target=\"_blank\">#{d.get('issue_number')}</a></td>"
@@ -355,7 +498,7 @@ def _row(d):
         f"<td>{d.get('format','qa').upper()}</td>"
         f"<td>{d.get('entries','?')}</td>"
         f"<td>{size_kb} KB</td>"
-        f"<td>{str(d.get('created_at',''))[:10]}</td>"
+        f"<td>{str(d.get('created_at',''))[:10]}{quality_badge}</td>"
         f"<td><a href=\"{d.get('zip_file','#')}\" class=\"download-btn\">&#x2B07; Download</a></td>"
         f"</tr>"
     )
@@ -476,17 +619,39 @@ def generate_index_html(idx):
       <ol>
         <li><strong>Create a new issue</strong> in this repository.</li>
         <li><strong>Set the title</strong> to the Ollama model name
-            (e.g. <code>Llama 3</code>, <code>Mistral</code>).</li>
+            (e.g. <code>Llama 3</code>, <code>Mistral</code>, <code>deepseek-r1</code>).</li>
         <li><strong>Set the body</strong> to your topic
-            (e.g. <code>History and dates</code>) or use the structured format:</li>
+            (e.g. <code>History and dates</code>) or use the structured format below.</li>
       </ol>
       <pre>Topic: World History
 Entries: 100
 Format: qa
 Description: Questions about major world history events</pre>
+      <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F4C4; Dataset Formats</h3>
+      <table style="margin-bottom:.75rem">
+        <thead><tr><th>Format</th><th>Fields</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><code>qa</code></td><td><code>instruction</code>, <code>output</code></td><td>Q&amp;A pairs, instruction-tuning, chatbots</td></tr>
+          <tr><td><code>facts</code></td><td><code>fact</code>, <code>explanation</code></td><td>Knowledge bases, trivia, encyclopedic data</td></tr>
+          <tr><td><code>story</code></td><td><code>prompt</code>, <code>story</code></td><td>Creative writing, narrative generation</td></tr>
+        </tbody>
+      </table>
+      <h3 style="margin-top:1rem;margin-bottom:.5rem;font-size:1rem">&#x1F522; How Many Entries?</h3>
+      <p style="color:var(--muted);font-size:.875rem;line-height:1.7">
+        The <code>Entries</code> field controls how many dataset rows are generated (1&ndash;500).
+        Recommended starting points:
+      </p>
+      <ul style="padding-left:1.5rem;color:var(--muted);font-size:.875rem;line-height:1.9;margin-top:.4rem">
+        <li><strong style="color:var(--text)">Quick test</strong> &mdash; <code>Entries: 10</code> (fast, good for validating a topic)</li>
+        <li><strong style="color:var(--text)">Small dataset</strong> &mdash; <code>Entries: 50</code> (default, suitable for fine-tuning experiments)</li>
+        <li><strong style="color:var(--text)">Medium dataset</strong> &mdash; <code>Entries: 200</code> (good coverage of a topic)</li>
+        <li><strong style="color:var(--text)">Large dataset</strong> &mdash; <code>Entries: 500</code> (maximum; may take several minutes)</li>
+      </ul>
       <p style="color:var(--muted);margin-top:.75rem;font-size:.875rem">
-        Supported formats: <code>qa</code> (question/answer),
-        <code>facts</code> (fact/explanation), <code>story</code> (prompt/story)
+        Each generated dataset is automatically <strong style="color:var(--text)">zipped</strong>
+        (containing <code>dataset.json</code>, <code>dataset.jsonl</code>,
+        <code>quality.json</code>, and <code>README.md</code>) and assessed for quality.
+        The &#x2605; score shown on each card is the model&rsquo;s own overall quality rating (1&ndash;10).
       </p>
     </div>
 
@@ -572,13 +737,15 @@ def main():
     actual_entries = len(data)
     print(f"✅ Got {actual_entries} entries")
 
+    quality = assess_dataset_quality(model, fmt, data)
+
     zip_name, zip_path = save_dataset_zip(
-        issue_number, model, topic, entries, fmt, data, raw_response
+        issue_number, model, topic, entries, fmt, data, raw_response, quality
     )
 
     idx = update_index(
         issue_number, model, topic, fmt, actual_entries,
-        zip_name, zip_path, issue_url, issue_title,
+        zip_name, zip_path, issue_url, issue_title, quality,
     )
 
     html = generate_index_html(idx)
@@ -587,6 +754,16 @@ def main():
 
     cfg = load_config()
     pages_url = f"https://{cfg['repo_owner']}.github.io/{cfg['repo_name']}/"
+
+    avg = quality.get("average", {})
+    quality_comment = ""
+    if avg:
+        quality_comment = (
+            "\n\n**Quality Assessment** (sampled entries scored by the model):\n\n"
+            "| Criterion | Score (1–10) |\n|---|---|\n"
+            + "".join(f"| {k.capitalize()} | {v} |\n" for k, v in avg.items())
+        )
+
     comment_issue(
         issue_number,
         f"## ✅ Dataset Generated\n\n"
@@ -595,7 +772,8 @@ def main():
         f"| Topic | {topic} |\n"
         f"| Format | {fmt.upper()} |\n"
         f"| Entries | {actual_entries} |\n"
-        f"| Download | [{zip_name}](../../raw/main/datasets/{zip_name}) |\n\n"
+        f"| Download | [{zip_name}](../../raw/main/datasets/{zip_name}) |\n"
+        f"{quality_comment}\n"
         f"📊 View all datasets: [{pages_url}]({pages_url})",
     )
 

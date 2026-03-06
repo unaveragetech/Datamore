@@ -99,7 +99,7 @@
       <ol>
         <li><strong>Create a new issue</strong> in this repository.</li>
         <li><strong>Set the title</strong> to the Ollama model name
-            (e.g. <code>Llama 3</code>, <code>Mistral</code>).</li>
+            (e.g. <code>Llama 3</code>, <code>Mistral</code>, <code>deepseek-r1</code>).</li>
         <li><strong>Set the body</strong> to your topic
             (e.g. <code>History and dates</code>) or use the structured format:</li>
       </ol>
@@ -107,9 +107,31 @@
 Entries: 100
 Format: qa
 Description: Questions about major world history events</pre>
+      <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F4C4; Dataset Formats</h3>
+      <table style="margin-bottom:.75rem">
+        <thead><tr><th>Format</th><th>Fields</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><code>qa</code></td><td><code>instruction</code>, <code>output</code></td><td>Q&amp;A pairs, instruction-tuning, chatbots</td></tr>
+          <tr><td><code>facts</code></td><td><code>fact</code>, <code>explanation</code></td><td>Knowledge bases, trivia, encyclopedic data</td></tr>
+          <tr><td><code>story</code></td><td><code>prompt</code>, <code>story</code></td><td>Creative writing, narrative generation</td></tr>
+        </tbody>
+      </table>
+      <h3 style="margin-top:1rem;margin-bottom:.5rem;font-size:1rem">&#x1F522; How Many Entries?</h3>
+      <p style="color:var(--muted);font-size:.875rem;line-height:1.7">
+        The <code>Entries</code> field controls how many dataset rows are generated (1&ndash;500).
+        Recommended starting points:
+      </p>
+      <ul style="padding-left:1.5rem;color:var(--muted);font-size:.875rem;line-height:1.9;margin-top:.4rem">
+        <li><strong style="color:var(--text)">Quick test</strong> &mdash; <code>Entries: 10</code> (fast, good for validating a topic)</li>
+        <li><strong style="color:var(--text)">Small dataset</strong> &mdash; <code>Entries: 50</code> (default, suitable for fine-tuning experiments)</li>
+        <li><strong style="color:var(--text)">Medium dataset</strong> &mdash; <code>Entries: 200</code> (good coverage of a topic)</li>
+        <li><strong style="color:var(--text)">Large dataset</strong> &mdash; <code>Entries: 500</code> (maximum; may take several minutes)</li>
+      </ul>
       <p style="color:var(--muted);margin-top:.75rem;font-size:.875rem">
-        Supported formats: <code>qa</code> (question/answer),
-        <code>facts</code> (fact/explanation), <code>story</code> (prompt/story)
+        Each generated dataset is automatically <strong style="color:var(--text)">zipped</strong>
+        (containing <code>dataset.json</code>, <code>dataset.jsonl</code>,
+        <code>quality.json</code>, and <code>README.md</code>) and assessed for quality.
+        The &#x2605; score shown on each card is the model&rsquo;s own overall quality rating (1&ndash;10).
       </p>
     </div>
 
