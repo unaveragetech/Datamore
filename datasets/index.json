@@ -1,6 +1,22 @@
 {
   "datasets": [
     {
+      "issue_number": 14,
+      "issue_title": "deepseek r1 (1.5b)",
+      "issue_url": "https://github.com/unaveragetech/Datamore/issues/14",
+      "model": "deepseek-r1:1.5b",
+      "topic": "LLM models and release date/year list of top 50",
+      "format": "qa",
+      "entries": 1,
+      "zip_file": "datasets/issue_14_deepseek-r1-1.5b_llm_models_and_release_date_year_list_of_top_50.zip",
+      "file_size": 1481,
+      "created_at": "2026-04-25T03:19:23.460224+00:00",
+      "quality": {
+        "scores": [],
+        "average": {}
+      }
+    },
+    {
       "issue_number": 12,
       "issue_title": "llama 3.5",
       "issue_url": "https://github.com/unaveragetech/Datamore/issues/12",
