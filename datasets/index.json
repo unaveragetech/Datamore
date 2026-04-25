@@ -1,0 +1,66 @@
+{
+  "datasets": [
+    {
+      "issue_number": 12,
+      "issue_title": "llama 3.5",
+      "issue_url": "https://github.com/unaveragetech/Datamore/issues/12",
+      "model": "llama3.2",
+      "topic": "Historic dates and figures",
+      "format": "qa",
+      "entries": 32,
+      "zip_file": "datasets/issue_12_llama3.2_historic_dates_and_figures.zip",
+      "file_size": 3809,
+      "created_at": "2026-04-25T02:28:29.326457+00:00",
+      "quality": {
+        "scores": [
+          {
+            "index": 0,
+            "accuracy": 9,
+            "clarity": 8,
+            "completeness": 9,
+            "overall": 8.7,
+            "note": "Correct date for World War I"
+          },
+          {
+            "index": 1,
+            "accuracy": 9,
+            "clarity": 8,
+            "completeness": 9,
+            "overall": 8.7,
+            "note": "Correct year for the end of WWI"
+          },
+          {
+            "index": 2,
+            "accuracy": 9,
+            "clarity": 9,
+            "completeness": 9,
+            "overall": 9,
+            "note": "Correct attribution for gravity discovery"
+          },
+          {
+            "index": 3,
+            "accuracy": 10,
+            "clarity": 9,
+            "completeness": 8,
+            "overall": 9,
+            "note": "Missing historical context"
+          },
+          {
+            "index": 4,
+            "accuracy": 10,
+            "clarity": 8,
+            "completeness": 7,
+            "overall": 8.5,
+            "note": "Missing historical context"
+          }
+        ],
+        "average": {
+          "accuracy": 9.4,
+          "clarity": 8.4,
+          "completeness": 8.4,
+          "overall": 8.8
+        }
+      }
+    }
+  ]
+}

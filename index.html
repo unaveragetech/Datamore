@@ -80,15 +80,15 @@
 
   <div class="hero-stats">
     <div class="stat">
-      <div class="value">0</div>
+      <div class="value">1</div>
       <div class="label">Datasets Generated</div>
     </div>
     <div class="stat">
-      <div class="value">0 KB</div>
+      <div class="value">3 KB</div>
       <div class="label">Total Size</div>
     </div>
     <div class="stat">
-      <div class="value">0</div>
+      <div class="value">1</div>
       <div class="label">Models Used</div>
     </div>
   </div>
@@ -101,12 +101,22 @@
         <li><strong>Set the title</strong> to the Ollama model name
             (e.g. <code>Llama 3</code>, <code>Mistral</code>, <code>deepseek-r1</code>).</li>
         <li><strong>Set the body</strong> to your topic
-            (e.g. <code>History and dates</code>) or use the structured format:</li>
+            (e.g. <code>History and dates</code>) or use the structured format below.</li>
       </ol>
       <pre>Topic: World History
 Entries: 100
 Format: qa
 Description: Questions about major world history events</pre>
+      <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F916; Recommended Small Models</h3>
+      <p style="color:var(--muted);font-size:.875rem;line-height:1.7">
+        Use one of these validated model names as the issue title. They run on modest hardware and are available in the Ollama library.
+      </p>
+      <table style="margin-bottom:.75rem;margin-top:.5rem">
+        <thead><tr><th>Model (issue title)</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>llama3.2</code></td><td style="color:var(--muted)">Meta Llama 3.2 (3B) – great general-purpose small model</td></tr><tr><td><code>llama3.2:1b</code></td><td style="color:var(--muted)">Meta Llama 3.2 (1B) – ultra-lightweight</td></tr><tr><td><code>tinyllama</code></td><td style="color:var(--muted)">TinyLlama (1.1B) – fastest, lowest memory</td></tr><tr><td><code>phi3</code></td><td style="color:var(--muted)">Microsoft Phi-3 Mini (3.8B) – strong reasoning</td></tr><tr><td><code>phi3.5</code></td><td style="color:var(--muted)">Microsoft Phi-3.5 Mini (3.8B) – improved Phi-3</td></tr><tr><td><code>gemma2:2b</code></td><td style="color:var(--muted)">Google Gemma 2 (2B) – efficient and capable</td></tr><tr><td><code>mistral</code></td><td style="color:var(--muted)">Mistral (7B) – well-rounded 7B model</td></tr><tr><td><code>qwen2.5:1.5b</code></td><td style="color:var(--muted)">Qwen 2.5 (1.5B) – multilingual small model</td></tr><tr><td><code>deepseek-r1:1.5b</code></td><td style="color:var(--muted)">DeepSeek R1 (1.5B) – reasoning-focused</td></tr><tr><td><code>smollm2</code></td><td style="color:var(--muted)">SmolLM2 (135M–1.7B) – very small, fast</td></tr>
+        </tbody>
+      </table>
       <h3 style="margin-top:1.25rem;margin-bottom:.5rem;font-size:1rem">&#x1F4C4; Dataset Formats</h3>
       <table style="margin-bottom:.75rem">
         <thead><tr><th>Format</th><th>Fields</th><th>Best for</th></tr></thead>
@@ -137,7 +147,18 @@ Description: Questions about major world history events</pre>
 
     <h2>&#x2728; Recent Datasets</h2>
     <div class="recent-grid">
-      <p class="empty">No datasets yet. <a href="../../issues/new">Create an issue</a> to generate one!</p>
+      
+        <div class="card">
+          <h3>llama 3.5</h3>
+          <p><strong>Topic:</strong> Historic dates and figures</p>
+          <p><strong>Model:</strong> <code>llama3.2</code></p>
+          <p><strong>Format:</strong> QA</p>
+          <p><strong>Entries:</strong> 32</p>
+          <p><strong>Created:</strong> 2026-04-25</p>
+          <div style="margin-top:.75rem"><p style="color:#8b949e;font-size:.8rem;margin-bottom:.5rem">Quality Assessment (sampled 5 entries)</p><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:100px;color:#8b949e;font-size:.8rem">Accuracy</span><div style="flex:1;background:#21262d;border-radius:4px;height:14px"><div style="width:94.0%;background:#3fb950;height:14px;border-radius:4px"></div></div><span style="width:24px;text-align:right;font-size:.8rem;color:#e6edf3">9.4</span></div><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:100px;color:#8b949e;font-size:.8rem">Clarity</span><div style="flex:1;background:#21262d;border-radius:4px;height:14px"><div style="width:84.0%;background:#3fb950;height:14px;border-radius:4px"></div></div><span style="width:24px;text-align:right;font-size:.8rem;color:#e6edf3">8.4</span></div><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:100px;color:#8b949e;font-size:.8rem">Completeness</span><div style="flex:1;background:#21262d;border-radius:4px;height:14px"><div style="width:84.0%;background:#3fb950;height:14px;border-radius:4px"></div></div><span style="width:24px;text-align:right;font-size:.8rem;color:#e6edf3">8.4</span></div><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:100px;color:#8b949e;font-size:.8rem">Overall</span><div style="flex:1;background:#21262d;border-radius:4px;height:14px"><div style="width:88.0%;background:#3fb950;height:14px;border-radius:4px"></div></div><span style="width:24px;text-align:right;font-size:.8rem;color:#e6edf3">8.8</span></div><ul style="padding-left:1rem;margin-top:.5rem"><li style="font-size:.8rem;color:#8b949e">Entry 0: Correct date for World War I</li><li style="font-size:.8rem;color:#8b949e">Entry 1: Correct year for the end of WWI</li><li style="font-size:.8rem;color:#8b949e">Entry 2: Correct attribution for gravity discovery</li><li style="font-size:.8rem;color:#8b949e">Entry 3: Missing historical context</li><li style="font-size:.8rem;color:#8b949e">Entry 4: Missing historical context</li></ul></div>
+          <a href="datasets/issue_12_llama3.2_historic_dates_and_figures.zip" class="download-btn">&#x2B07; Download</a>
+          <a href="https://github.com/unaveragetech/Datamore/issues/12" target="_blank" class="issue-link">View Issue</a>
+        </div>
     </div>
 
     <h2>&#x1F4E6; All Datasets</h2>
@@ -149,7 +170,7 @@ Description: Questions about major world history events</pre>
             <th>Format</th><th>Entries</th><th>Size</th><th>Created</th><th>Download</th>
           </tr>
         </thead>
-        <tbody><tr><td colspan="9" style="text-align:center;color:#8b949e">No datasets yet.</td></tr></tbody>
+        <tbody><tr><td><a href="https://github.com/unaveragetech/Datamore/issues/12" target="_blank">#12</a></td><td>llama 3.5</td><td>Historic dates and figures</td><td><code>llama3.2</code></td><td>QA</td><td>32</td><td>3 KB</td><td>2026-04-25<span style="background:#3fb95020;color:#3fb950;border:1px solid #3fb95050;padding:1px 6px;border-radius:10px;font-size:.75rem;margin-left:.25rem">★ 8.8</span></td><td><a href="datasets/issue_12_llama3.2_historic_dates_and_figures.zip" class="download-btn">&#x2B07; Download</a></td></tr></tbody>
       </table>
     </div>
   </main>
